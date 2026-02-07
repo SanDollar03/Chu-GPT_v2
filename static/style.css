@@ -1,0 +1,543 @@
+/* =====================================
+   Base / Theme
+===================================== */
+:root {
+    --bg: #0b0f19;
+    --panel: rgba(255, 255, 255, .04);
+    --line: rgba(255, 255, 255, .08);
+    --muted: rgba(231, 234, 240, .75);
+    --text: #e7eaf0;
+
+    --input-bg: rgba(255, 255, 255, .06);
+    --input-line: rgba(255, 255, 255, .12);
+
+    --accent: #22c55e;
+    --user: #793dad;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    /* ④ 少し小さく */
+}
+
+/* =====================================
+   Layout
+===================================== */
+.layout {
+    height: 100vh;
+    display: flex;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+    width: 300px;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+}
+
+.brand-mark {
+    font-size: 22px;
+}
+
+.brand-text {
+    font-weight: 900;
+    letter-spacing: .3px;
+}
+
+/* model select + buttons theme unify */
+.block {
+    padding: 0 8px;
+}
+
+.label {
+    font-size: 12px;
+    opacity: .75;
+    margin-bottom: 6px;
+}
+
+.select,
+.btn,
+.sidebar-logout {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--input-line);
+    outline: none;
+}
+
+.select {
+    appearance: none;
+}
+
+.btn {
+    cursor: pointer;
+    text-align: left;
+}
+
+.btn.primary {
+    background: rgba(34, 197, 94, .18);
+    border-color: rgba(34, 197, 94, .30);
+    font-weight: 900;
+}
+
+.sidebar-meta {
+    margin-top: auto;
+    padding: 10px 8px 8px;
+    border-top: 1px solid var(--line);
+}
+
+.sidebar-user {
+    opacity: .85;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.sidebar-logout {
+    cursor: pointer;
+}
+
+/* ---------- "あなたのチャット" ---------- */
+.conv-head {
+    padding: 0 8px;
+    margin-top: 2px;
+    font-size: 12px;
+    opacity: .85;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.conv-list {
+    padding: 0 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 52vh;
+    overflow: auto;
+}
+
+.conv-empty {
+    padding: 10px 10px;
+    opacity: .65;
+    border: 1px dashed rgba(255, 255, 255, .14);
+    border-radius: 12px;
+}
+
+.conv-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 10px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background: rgba(0, 0, 0, .18);
+}
+
+.conv-item.active {
+    border-color: rgba(59, 130, 246, .35);
+    background: rgba(59, 130, 246, .08);
+}
+
+.conv-left {
+    flex: 1;
+    cursor: pointer;
+}
+
+.conv-title {
+    font-weight: 800;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.conv-meta {
+    margin-top: 4px;
+    opacity: .72;
+    font-size: 11px;
+}
+
+.conv-more {
+    flex: 0 0 auto;
+    width: 52px;
+    padding: 6px 6px;
+    border-radius: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-line);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* pop menu */
+.menu-pop {
+    position: fixed;
+    width: 180px;
+    background: rgba(10, 14, 26, .98);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 12px;
+    padding: 6px;
+    z-index: 9999;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+.menu-pop button {
+    width: 100%;
+    text-align: left;
+    padding: 10px 10px;
+    border-radius: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.menu-pop button:hover {
+    background: rgba(255, 255, 255, .06);
+}
+
+.menu-pop button.danger {
+    color: #fecaca;
+}
+
+.menu-pop button.danger:hover {
+    background: rgba(239, 68, 68, .15);
+}
+
+/* ---------- Main ---------- */
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--line);
+}
+
+.topbar-title {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.topbar-sub {
+    font-size: 12px;
+    opacity: .7;
+    margin-top: 4px;
+}
+
+/* =====================================
+   Chat
+===================================== */
+.chat {
+    flex: 1;
+    padding: 16px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.msg {
+    display: flex;
+}
+
+.msg.user {
+    justify-content: flex-end;
+}
+
+.msg.bot {
+    justify-content: flex-start;
+}
+
+.bubble {
+    max-width: min(720px, 90%);
+    padding: 10px 12px;
+    border-radius: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    position: relative;
+}
+
+.msg.user .bubble {
+    background: var(--user);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+}
+
+.msg.bot .bubble {
+    background: rgba(255, 255, 255, .08);
+    /* ①色分けしない */
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-bottom-left-radius: 6px;
+}
+
+.model-tag {
+    display: inline-block;
+    font-size: 11px;
+    line-height: 1;
+    padding: 6px 8px;
+    border-radius: 999px;
+    margin-right: 8px;
+    margin-bottom: 6px;
+    opacity: .95;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .06);
+}
+
+.bubble-text {
+    display: block;
+}
+
+.msg-time {
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: .65;
+    text-align: right;
+    /* ②右下 */
+}
+
+/* =====================================
+   Composer
+===================================== */
+.composer {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    border-top: 1px solid var(--line);
+    background: rgba(0, 0, 0, .25);
+}
+
+.composer input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--input-line);
+    outline: none;
+}
+
+.composer button {
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #06210f;
+    font-weight: 900;
+    border: 0;
+    cursor: pointer;
+}
+
+.composer button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* =====================================
+   Toast (①)
+===================================== */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(10, 14, 26, .92);
+    border: 1px solid rgba(255, 255, 255, .14);
+    color: var(--text);
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 9999;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* =====================================
+   Auth pages
+===================================== */
+.auth {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+}
+
+.auth-card {
+    width: min(420px, 92vw);
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 16px;
+    padding: 18px 16px;
+}
+
+.auth-title {
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.auth-sub {
+    opacity: .75;
+    margin-top: 6px;
+    margin-bottom: 14px;
+}
+
+.auth-error {
+    background: rgba(239, 68, 68, .15);
+    border: 1px solid rgba(239, 68, 68, .25);
+    color: #fecaca;
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.auth-form {
+    display: grid;
+    gap: 10px;
+}
+
+.auth-form label {
+    font-size: 12px;
+    opacity: .8;
+}
+
+.auth-form input {
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--input-line);
+    outline: none;
+}
+
+.auth-form button {
+    margin-top: 6px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #06210f;
+    font-weight: 900;
+    border: 0;
+    cursor: pointer;
+}
+
+.auth-footer {
+    margin-top: 12px;
+    font-size: 12px;
+    opacity: .85;
+}
+
+.auth-footer a {
+    color: #93c5fd;
+    text-decoration: none;
+}
+
+.conv-preview {
+    margin-top: 6px;
+    opacity: .82;
+    font-size: 12px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ③ select展開（option）の配色：ダーク背景＋白文字（効く範囲はブラウザ依存） */
+select option {
+    background: #0b0f19;
+    color: #e7eaf0;
+}
+
+/* dropdown */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .06);
+    color: #e7eaf0;
+    border: 1px solid rgba(255, 255, 255, .12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.dropdown-arrow {
+    margin-left: 10px;
+    opacity: .9;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: max-content;
+    min-width: 100%;
+    max-width: 640px;
+    background: rgba(10, 14, 26, .98);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 14px;
+    padding: 6px;
+    z-index: 9999;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+.dropdown-item {
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: #e7eaf0;
+    padding: 10px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, .06);
+}
+
+.dropdown-item-title {
+    font-weight: 900;
+    font-size: 13px;
+}
+
+.dropdown-item-desc {
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: .75;
+    line-height: 1.35;
+    white-space: normal;
+}
