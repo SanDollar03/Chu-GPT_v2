@@ -19,7 +19,7 @@
             {% endif %}
 
             <form method="post" action="/login" class="auth-form">
-                <label>ID（数字7桁）</label>
+                <label>ID（数字7桁・従業員コード）</label>
                 <input name="user_id" inputmode="numeric" pattern="\d{7}" maxlength="7" value="{{ user_id or '' }}"
                     required />
 
