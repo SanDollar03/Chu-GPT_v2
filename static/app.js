@@ -1,6 +1,6 @@
 (() => {
     // ----------------------------
-    // DOM guard: index.html only (core only)
+    // DOM guard: index.html only
     // ----------------------------
     const chat = document.getElementById("chat");
     const form = document.getElementById("form");
@@ -21,6 +21,9 @@
     let currentModel = null;
     let activeThreadId = null;
 
+    // thinking GIF（static/thinking.gif を配置）
+    const THINKING_GIF_SRC = "/static/thinking.gif";
+
     const MODEL_INFO = {
         seisan: { label: "生産モデル 1.04", desc: "現場の知識を、最短で引き出す。/ 現場会議議事録 / 能率管理表 / 品質過去トラ / 停止時間データ" },
         hozen: { label: "保全モデル 1.04", desc: "巧の知識をヒントに。 / 現場会議議事録 / TMSS予防保全・突発事後・調査解析" },
@@ -34,6 +37,9 @@
     const modelLabel = (k) => (MODEL_INFO[k]?.label || k || "モデル");
     const modelDesc = (k) => (MODEL_INFO[k]?.desc || "");
 
+    // ----------------------------
+    // Toast
+    // ----------------------------
     function showToast(text) {
         toast.textContent = text;
         toast.classList.add("show");
@@ -65,6 +71,22 @@
     function threadDisplayName(it) {
         return (it?.name || "").trim() || (it?.preview || "").trim() || "chat";
     }
+
+    // ----------------------------
+    // Scroll: keep bottom visible
+    // ----------------------------
+    let stickToBottom = true;
+
+    function scrollToBottom(force = false) {
+        if (force || stickToBottom) {
+            chat.scrollTop = chat.scrollHeight;
+        }
+    }
+
+    chat.addEventListener("scroll", () => {
+        const nearBottom = (chat.scrollHeight - (chat.scrollTop + chat.clientHeight)) < 40;
+        stickToBottom = nearBottom;
+    });
 
     // ----------------------------
     // Optional UI: model-status bar (auto create)
@@ -183,7 +205,6 @@
     // Notice fetch (毎回表示)
     // ----------------------------
     async function showNoticeEveryTime() {
-        // /api/notice が無い場合でもチャットを止めない
         try {
             const res = await apiFetch("/api/notice");
             const data = await res.json().catch(() => ({}));
@@ -237,7 +258,7 @@
     }
 
     // ----------------------------
-    // chat UI
+    // chat UI (normal messages)
     // ----------------------------
     function addMsg({ role, text, modelKey, timeISO, showModelTag, showTime }) {
         const row = document.createElement("div");
@@ -267,7 +288,7 @@
 
         row.appendChild(bubble);
         chat.appendChild(row);
-        chat.scrollTop = chat.scrollHeight;
+        scrollToBottom(true);
         return { body, bubble, row };
     }
 
@@ -351,6 +372,7 @@
         }
 
         if (items.length === 0) renderEmptyChat();
+        scrollToBottom(true);
     }
 
     // ----------------------------
@@ -516,6 +538,7 @@
                 setActiveThread(it.thread_id);
                 await loadHistory();
                 await loadThreads();
+                scrollToBottom(true);
             });
 
             more.addEventListener("click", (e) => {
@@ -538,10 +561,30 @@
         showToast("新しいチャットを開始しました");
         await loadThreads();
         input.focus();
+        scrollToBottom(true);
     });
 
     // ----------------------------
-    // Streaming (SSE)
+    // Composer placeholder: "ちゅっと考え中・・・"
+    // ----------------------------
+    const defaultPlaceholder = input.getAttribute("placeholder") || "メッセージを入力…";
+
+    function lockComposerThinking() {
+        send.disabled = true;
+        input.disabled = true;
+        input.value = "";
+        input.setAttribute("placeholder", "ちゅっと考え中・・・");
+    }
+
+    function unlockComposer() {
+        send.disabled = false;
+        input.disabled = false;
+        input.setAttribute("placeholder", defaultPlaceholder);
+        input.focus();
+    }
+
+    // ----------------------------
+    // SSE parsing
     // ----------------------------
     function stringifyErrPayload(ev) {
         if (!ev) return "stream error";
@@ -568,19 +611,58 @@
         return { eventName, ev };
     }
 
+    // ----------------------------
+    // Thinking row (GIF only, no bubble, no model tag)
+    // ----------------------------
+    function addThinkingGifOnlyRow() {
+        const row = document.createElement("div");
+        row.className = "msg bot gif-only";
+
+        const img = document.createElement("img");
+        img.className = "thinking-gif";
+        img.src = THINKING_GIF_SRC;
+        img.alt = "thinking";
+
+        row.appendChild(img);
+        chat.appendChild(row);
+
+        // 追加直後もスクロール
+        scrollToBottom(true);
+        requestAnimationFrame(() => scrollToBottom(true));
+        setTimeout(() => scrollToBottom(true), 0);
+
+        // ★ここが重要：画像の高さ確定後に必ずもう一度スクロール
+        const forceScrollAfterLoad = () => {
+            scrollToBottom(true);
+            requestAnimationFrame(() => scrollToBottom(true));
+            setTimeout(() => scrollToBottom(true), 0);
+        };
+
+        // decode() が使えるブラウザは decode 完了後が最も確実
+        if (img.decode) {
+            img.decode().then(forceScrollAfterLoad).catch(() => {
+                // decode失敗時はonloadにフォールバック
+            });
+        }
+
+        img.addEventListener("load", forceScrollAfterLoad, { once: true });
+        img.addEventListener("error", () => {
+            // 画像が無い/壊れててもUIが止まらないように
+            forceScrollAfterLoad();
+        }, { once: true });
+
+        return row;
+    }
+
     async function streamChat(message) {
         if (!activeThreadId) setActiveThread(newThreadId());
+        stickToBottom = true;
 
+        // User msg
         addMsg({ role: "user", text: message, modelKey: "", timeISO: "", showModelTag: false, showTime: false });
 
-        const { body: botBody, bubble: botBubble } = addMsg({
-            role: "bot",
-            text: "ちゅっと考え中・・・",
-            modelKey: currentModel,
-            timeISO: "",
-            showModelTag: true,
-            showTime: false
-        });
+        // Thinking GIF only (NO bubble)
+        const thinkingRow = addThinkingGifOnlyRow();
 
         const res = await apiFetch("/api/chat/stream", {
             method: "POST",
@@ -622,22 +704,98 @@
 
                 if (eventName === "delta") {
                     if (!cleared) {
-                        botBody.textContent = "";
+                        thinkingRow.remove(); // ★GIF行を消す
                         full = "";
                         cleared = true;
                     }
+
+                    // 返答の吹き出し（通常表示：モデルタグは付ける）
+                    // 初回delta時に作る
+                    if (cleared && full === "") {
+                        // ここではまだbubbleが無いので1回だけ作る
+                    }
+
                     full += (ev.text || "");
-                    botBody.textContent = full;
+
+                    // まだ返答bubbleを作ってないなら作成
+                    // すでに最後のbot bubbleがあるならそこを更新
+                    let lastBotBubbleText = chat.querySelector(".msg.bot:last-child .bubble-text");
+                    let lastBotMsg = chat.querySelector(".msg.bot:last-child");
+
+                    // lastがgif-onlyだったら（念のため）作り直し
+                    if (!lastBotMsg || lastBotMsg.classList.contains("gif-only")) {
+                        const created = addMsg({
+                            role: "bot",
+                            text: full,
+                            modelKey: currentModel,
+                            timeISO: "",
+                            showModelTag: true,
+                            showTime: false
+                        });
+                        lastBotBubbleText = created.body;
+                    } else {
+                        // 既存のbot bubble-textに追記反映
+                        if (!lastBotBubbleText) {
+                            const created = addMsg({
+                                role: "bot",
+                                text: full,
+                                modelKey: currentModel,
+                                timeISO: "",
+                                showModelTag: true,
+                                showTime: false
+                            });
+                            lastBotBubbleText = created.body;
+                        } else {
+                            lastBotBubbleText.textContent = full;
+                        }
+                    }
+
+                    scrollToBottom();
 
                 } else if (eventName === "replace") {
+                    if (!cleared) {
+                        thinkingRow.remove();
+                        cleared = true;
+                    }
                     full = ev.text || "";
-                    botBody.textContent = full;
+
+                    // bot bubbleを必ず用意して置換
+                    let lastBotBubbleText = chat.querySelector(".msg.bot:last-child .bubble-text");
+                    let lastBotMsg = chat.querySelector(".msg.bot:last-child");
+
+                    if (!lastBotMsg || lastBotMsg.classList.contains("gif-only")) {
+                        const created = addMsg({
+                            role: "bot",
+                            text: full,
+                            modelKey: currentModel,
+                            timeISO: "",
+                            showModelTag: true,
+                            showTime: false
+                        });
+                        lastBotBubbleText = created.body;
+                    } else if (lastBotBubbleText) {
+                        lastBotBubbleText.textContent = full;
+                    } else {
+                        const created = addMsg({
+                            role: "bot",
+                            text: full,
+                            modelKey: currentModel,
+                            timeISO: "",
+                            showModelTag: true,
+                            showTime: false
+                        });
+                        lastBotBubbleText = created.body;
+                    }
+
+                    scrollToBottom();
 
                 } else if (eventName === "done") {
                     gotDone = true;
                     if (ev.thread_id) setActiveThread(ev.thread_id);
+
                     await loadThreads();
                     await loadHistory();
+                    scrollToBottom(true);
                     return;
 
                 } else if (eventName === "error") {
@@ -650,20 +808,20 @@
             await loadThreads();
             if (activeThreadId) {
                 await loadHistory();
-            } else {
-                botBubble.classList.add("warn");
+                scrollToBottom(true);
             }
         }
     }
 
+    // ----------------------------
+    // submit
+    // ----------------------------
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const message = input.value.trim();
         if (!message) return;
 
-        input.value = "";
-        send.disabled = true;
-        input.disabled = true;
+        lockComposerThinking();
 
         try {
             await streamChat(message);
@@ -676,10 +834,9 @@
                 showModelTag: true,
                 showTime: true
             });
+            scrollToBottom(true);
         } finally {
-            send.disabled = false;
-            input.disabled = false;
-            input.focus();
+            unlockComposer();
         }
     });
 
@@ -689,8 +846,6 @@
     (async () => {
         try {
             await loadModels();
-
-            // ✅ index.html が読み込まれるたびに必ず表示
             await showNoticeEveryTime();
 
             activeThreadId = loadActiveThread();
@@ -698,6 +853,7 @@
             await loadHistory();
             if (!activeThreadId) renderEmptyChat();
             input.focus();
+            scrollToBottom(true);
         } catch (e) {
             chat.innerHTML = "";
             addMsg({
@@ -708,6 +864,7 @@
                 showModelTag: true,
                 showTime: false
             });
+            scrollToBottom(true);
         }
     })();
 })();
